@@ -336,6 +336,7 @@ $('#formEditar').addEventListener('submit', async (e) => {
 });
 $('#btnCerrarModal').addEventListener('click', () => { $('#modalEditar').hidden = true; });
 $('#modalEditar').addEventListener('click', (e) => { if (e.target.id === 'modalEditar') e.target.hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#modalEditar').hidden = true; });
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

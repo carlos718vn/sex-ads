@@ -88,6 +88,7 @@ nav { display: flex; gap: 4px; flex-wrap: wrap; }
 
 /* Modal */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-start; justify-content: center; padding: 20px 12px; z-index: 50; overflow-y: auto; }
+.modal[hidden] { display: none; }
 .modal-box { width: 100%; max-width: 640px; }
 .modal-box h3 { margin-top: 0; }
 
