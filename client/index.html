@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sex ads — Directorio de modelos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a href="#" class="logo" id="logoHome">Sex ads</a>
+    <nav>
+      <button class="navlink" data-view="directorio">Directorio</button>
+      <button class="navlink" data-view="registro">Publicar mi perfil</button>
+      <button class="navlink" data-view="admin" id="navAdmin">Admin</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ================= DIRECTORIO ================= -->
+  <section id="view-directorio" class="view">
+    <div class="hero" id="hero">
+      <div class="hero-txt">
+        <h1>Sex ads</h1>
+        <p>Encuentra la chica que te gusta y escríbele directo por WhatsApp.</p>
+        <div class="hero-cta">
+          <button class="btn btn-red" data-view="registro">Publicar mi perfil</button>
+          <button class="btn btn-ghost" id="heroVer">Ver modelos</button>
+        </div>
+      </div>
+    </div>
+    <h2 class="sec-title">Modelos</h2>
+    <div id="grid" class="grid"></div>
+    <p id="gridVacio" class="muted" hidden>No hay modelos publicadas todavía.</p>
+  </section>
+
+  <!-- ================= PERFIL ================= -->
+  <section id="view-perfil" class="view" hidden>
+    <button class="btn btn-ghost" data-view="directorio">← Volver al directorio</button>
+    <div id="perfilBox" class="perfil"></div>
+  </section>
+
+  <!-- ================= REGISTRO ================= -->
+  <section id="view-registro" class="view" hidden>
+    <h2 class="sec-title">Publicar mi perfil</h2>
+    <p class="muted">Regístrate con tus fotos, tu descripción y tu número de WhatsApp. Tu perfil queda <b>pendiente</b> y el admin lo aprueba para publicarlo.</p>
+    <form id="formRegistro" class="card form">
+      <label>Nombre
+        <input name="nombre" required maxlength="60" placeholder="Tu nombre o apodo">
+      </label>
+      <label>Descripción
+        <textarea name="descripcion" rows="4" maxlength="1000" placeholder="Cuéntale a los clientes quién eres, qué ofreces..."></textarea>
+      </label>
+      <label>Número de WhatsApp
+        <input name="telefono" required inputmode="tel" placeholder="Ej: 809 555 1234">
+      </label>
+      <label>Fotos (al menos 1, puedes subir varias)
+        <input type="file" id="regFotos" accept="image/*" multiple>
+      </label>
+      <div id="regPreview" class="thumbs"></div>
+      <button class="btn btn-red" type="submit">Enviar mi solicitud</button>
+      <p id="regMsg" class="msg"></p>
+    </form>
+  </section>
+
+  <!-- ================= ADMIN LOGIN ================= -->
+  <section id="view-admin" class="view" hidden>
+    <h2 class="sec-title">Panel de admin</h2>
+    <form id="formLogin" class="card form">
+      <label>Usuario
+        <input name="usuario" required autocomplete="username" value="admin">
+      </label>
+      <label>Contraseña
+        <input name="contrasena" type="password" required autocomplete="current-password" placeholder="••••••">
+      </label>
+      <button class="btn btn-red" type="submit">Entrar</button>
+      <p id="loginMsg" class="msg"></p>
+    </form>
+  </section>
+
+  <!-- ================= PANEL ADMIN ================= -->
+  <section id="view-panel" class="view" hidden>
+    <div class="panel-head">
+      <h2 class="sec-title">Panel de admin</h2>
+      <button class="btn btn-ghost" id="btnSalir">Salir</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="solicitudes">Solicitudes <span id="badgeSol" class="badge" hidden></span></button>
+      <button class="tab" data-tab="perfiles">Perfiles</button>
+      <button class="tab" data-tab="agregar">＋ Agregar modelo</button>
+    </div>
+
+    <div id="tab-solicitudes" class="tabpane">
+      <p class="muted">Invitaciones pendientes de las chicas que se registraron. Aprueba la que quieras publicar.</p>
+      <div id="listaSol"></div>
+    </div>
+
+    <div id="tab-perfiles" class="tabpane" hidden>
+      <p class="muted">Todos los perfiles. Edita los datos, súbeles fotos o bórralos.</p>
+      <div id="listaPerfiles"></div>
+    </div>
+
+    <div id="tab-agregar" class="tabpane" hidden>
+      <form id="formAgregar" class="card form">
+        <p class="muted">La modelo queda <b>visible al instante</b>, sin esperar registro.</p>
+        <label>Nombre
+          <input name="nombre" required maxlength="60" placeholder="Nombre de la modelo">
+        </label>
+        <label>Descripción
+          <textarea name="descripcion" rows="4" maxlength="1000" placeholder="Descripción del perfil..."></textarea>
+        </label>
+        <label>Número de WhatsApp (opcional)
+          <input name="telefono" inputmode="tel" placeholder="Ej: 809 555 1234">
+        </label>
+        <label>Fotos (puedes subir varias, sin límite)
+          <input type="file" id="addFotos" accept="image/*" multiple>
+        </label>
+        <div id="addPreview" class="thumbs"></div>
+        <button class="btn btn-red" type="submit">Agregar modelo</button>
+        <p id="addMsg" class="msg"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <b>Sex ads</b> — Directorio de modelos. Solo para mayores de 18 años.
+  </div>
+</footer>
+
+<!-- Modal de edición de perfil -->
+<div id="modalEditar" class="modal" hidden>
+  <div class="modal-box card">
+    <h3>Editar perfil</h3>
+    <form id="formEditar" class="form">
+      <input type="hidden" name="id">
+      <label>Nombre
+        <input name="nombre" required maxlength="60">
+      </label>
+      <label>Descripción
+        <textarea name="descripcion" rows="4" maxlength="1000"></textarea>
+      </label>
+      <label>Número de WhatsApp
+        <input name="telefono" inputmode="tel" placeholder="Vacío = sin botón de WhatsApp">
+      </label>
+      <div class="row">
+        <button class="btn btn-red" type="submit">Guardar</button>
+        <button class="btn btn-ghost" type="button" id="btnCerrarModal">Cancelar</button>
+      </div>
+      <p id="editMsg" class="msg"></p>
+    </form>
+    <h4>Fotos del perfil</h4>
+    <div id="editFotos" class="thumbs"></div>
+    <label class="btn btn-ghost">＋ Subir foto
+      <input type="file" id="editFotoInput" accept="image/*" multiple hidden>
+    </label>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
