@@ -92,4 +92,45 @@ nav { display: flex; gap: 4px; flex-wrap: wrap; }
 .modal-box { width: 100%; max-width: 640px; }
 .modal-box h3 { margin-top: 0; }
 
+/* Subformularios (datos opcionales del perfil) */
+.subform { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; margin: 0; background: #fff; }
+.subform legend { font-weight: 700; font-size: 15px; padding: 0 6px; }
+.subform p { margin: 0 0 10px; }
+.grid2 { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 560px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+.grid2 label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; }
+.grid2 input { border: 1px solid #d1d5db; border-radius: 10px; padding: 11px 12px; font-size: 15px; font-family: inherit; background: #fff; }
+.grid2 input:focus { outline: 2px solid #d61f2c; border-color: #d61f2c; }
+/* Disponibilidad (edición) */
+.disp-dia { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f2; }
+.disp-dia:last-child { border-bottom: 0; }
+.disp-dia > span { font-weight: 600; font-size: 15px; }
+.disp-dia select { border: 1px solid #d1d5db; border-radius: 999px; padding: 8px 12px; font-size: 14px; font-family: inherit; background: #fff; }
+/* Editor de servicios */
+.serv-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; }
+@media (min-width: 560px) { .serv-row { grid-template-columns: 1fr 1fr 1fr auto; align-items: start; } }
+.serv-row input { border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: inherit; width: 100%; }
+/* Paneles del perfil estilo Tryst */
+.paneles-perfil { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 20px; }
+@media (min-width: 760px) { .paneles-perfil { grid-template-columns: 1fr 1fr; } }
+.panel-title { margin: 0 0 10px; font-size: 20px; }
+.dato { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #f0f0f2; font-size: 15px; }
+.dato:last-child { border-bottom: 0; }
+.dato span { color: #6b7280; }
+.dato b { font-weight: 600; text-align: right; }
+.disp-dia-view { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f2; font-size: 15px; }
+.disp-dia-view:last-child { border-bottom: 0; }
+.disp-dia-view > span:first-child { font-weight: 700; }
+.pill { border: 1px solid #d1d5db; border-radius: 999px; padding: 6px 14px; font-size: 14px; background: #fff; }
+.pill-todo { background: #dcfce7; border-color: #86efac; color: #15803d; font-weight: 600; }
+.pill-no { background: #f3f4f6; color: #6b7280; }
+/* Tarifas */
+.tarifa { display: flex; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid #f0f0f2; }
+.tarifa:last-child { border-bottom: 0; }
+.tarifa p { margin: 4px 0 0; }
+.tarifa-precio { white-space: nowrap; }
+/* Contacto */
+.contacto { display: flex; flex-direction: column; gap: 10px; }
+.contacto-item { font-size: 16px; font-weight: 600; }
+
 .footer { margin-top: 40px; padding: 22px 0; background: #101528; color: #9aa3c0; font-size: 14px; }

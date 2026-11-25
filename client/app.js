@@ -62,6 +62,135 @@ function pintarPreview(cont, fotos) {
 }
 
 // ---------------------------------------------------------------------------
+// Datos del perfil (opcionales): disponibilidad, servicios y contacto.
+// Solo nombre, WhatsApp y al menos 1 foto son obligatorios; todo lo demás
+// es opcional y se puede llenar después (o lo completa el admin al editar).
+// ---------------------------------------------------------------------------
+const DIAS = [
+  ['lunes', 'Lunes'], ['martes', 'Martes'], ['miercoles', 'Miércoles'],
+  ['jueves', 'Jueves'], ['viernes', 'Viernes'], ['sabado', 'Sábado'], ['domingo', 'Domingo'],
+];
+const DISP_TODO = Object.fromEntries(DIAS.map(([k]) => [k, 'todo']));
+
+function camposPerfilHTML() {
+  const campos = [
+    ['edad', 'Edad', 'number', 'Ej: 20', 'min="18" max="99" inputmode="numeric"'],
+    ['genero', 'Género', 'text', 'Ej: Mujer', 'maxlength="40"'],
+    ['tipo_cuerpo', 'Tipo de cuerpo', 'text', 'Ej: Chiquita', 'maxlength="40"'],
+    ['altura', 'Altura', 'text', 'Ej: 148 cm', 'maxlength="20"'],
+    ['etnicidad', 'Etnicidad', 'text', 'Ej: Dominicana', 'maxlength="40"'],
+    ['talla_copa', 'Talla de copa', 'text', 'Ej: B', 'maxlength="10"'],
+    ['color_cabello', 'Color de cabello', 'text', 'Ej: Rubio', 'maxlength="30"'],
+    ['color_ojos', 'Color de ojos', 'text', 'Ej: Marrón', 'maxlength="30"'],
+    ['talla_calzado', 'Talla de calzado', 'text', 'Ej: 5', 'maxlength="10"'],
+    ['idiomas', 'Idiomas', 'text', 'Ej: Español, Inglés', 'maxlength="120"'],
+    ['ubicacion', 'Con sede en', 'text', 'Ej: Santo Domingo', 'maxlength="120"'],
+    ['se_adapta_a', 'Se adapta a', 'text', 'Ej: Hombres, mujeres y parejas', 'maxlength="120"'],
+  ];
+  return `<fieldset class="subform"><legend>Datos del perfil (opcional)</legend>
+    <p class="muted">Todo esto es opcional. Puedes registrarte solo con nombre, WhatsApp y foto, y llenar lo demás después.</p>
+    <div class="grid2">${campos.map(([n, et, tipo, ph, extra]) => `
+      <label>${et} (opcional)
+        <input name="${n}" type="${tipo}" placeholder="${ph}" ${extra || ''}>
+      </label>`).join('')}
+    </div></fieldset>`;
+}
+function camposContactoHTML() {
+  const campos = [
+    ['movil', 'Móvil', 'tel', 'Ej: 809 555 1234'],
+    ['red_x', 'X / Twitter', 'text', 'Ej: @tu_usuario o enlace'],
+    ['red_instagram', 'Instagram', 'text', 'Ej: @tu_usuario o enlace'],
+    ['red_fansly', 'Fansly', 'text', 'Ej: enlace de Fansly'],
+    ['red_otra', 'Otra red', 'text', 'Ej: nombre o enlace'],
+  ];
+  return `<fieldset class="subform"><legend>Contacto (opcional)</legend>
+    <p class="muted">Además del WhatsApp, puedes poner tu móvil y tus redes. Se muestran en tu perfil.</p>
+    <div class="grid2">${campos.map(([n, et, tipo, ph]) => `
+      <label>${et} (opcional)
+        <input name="${n}" type="${tipo}" placeholder="${ph}" maxlength="200">
+      </label>`).join('')}
+    </div></fieldset>`;
+}
+function pintarDisponibilidad(el, disp) {
+  const d = { ...DISP_TODO, ...(disp || {}) };
+  el.innerHTML = DIAS.map(([k, nombre]) => `
+    <div class="disp-dia">
+      <span>${nombre}</span>
+      <select data-dia="${k}">
+        <option value="todo" ${d[k] === 'todo' ? 'selected' : ''}>Todo el día</option>
+        <option value="no" ${d[k] === 'no' ? 'selected' : ''}>No disponible</option>
+      </select>
+    </div>`).join('');
+}
+function leerDisponibilidad(el) {
+  const out = {};
+  el.querySelectorAll('select[data-dia]').forEach((s) => { out[s.dataset.dia] = s.value; });
+  return out;
+}
+function agregarServicioFila(el, s = {}) {
+  const row = document.createElement('div');
+  row.className = 'serv-row';
+  row.innerHTML = `
+    <input placeholder="Nombre del servicio" maxlength="80" value="${esc(s.nombre || '')}">
+    <input placeholder="Precio (ej: 500 dólares)" maxlength="40" value="${esc(s.precio || '')}">
+    <input placeholder="Nota (opcional, ej: Se requiere depósito)" maxlength="200" value="${esc(s.nota || '')}">
+    <button type="button" class="btn btn-ghost btn-sm" data-quitar-serv>✕</button>`;
+  row.querySelector('[data-quitar-serv]').addEventListener('click', () => row.remove());
+  el.appendChild(row);
+}
+function pintarServicios(el, servicios) {
+  el.innerHTML = '';
+  (servicios && servicios.length ? servicios : [{}]).forEach((s) => agregarServicioFila(el, s));
+}
+function leerServicios(el) {
+  return [...el.querySelectorAll('.serv-row')].map((row) => {
+    const [nombre, precio, nota] = [...row.querySelectorAll('input')].map((i) => i.value.trim());
+    return { nombre, precio, nota };
+  }).filter((s) => s.nombre);
+}
+function leerPerfil(fd) {
+  const txt = (k) => String(fd.get(k) || '').trim();
+  const edadRaw = txt('edad');
+  return {
+    edad: edadRaw === '' ? null : Number(edadRaw),
+    genero: txt('genero'), tipo_cuerpo: txt('tipo_cuerpo'), altura: txt('altura'),
+    etnicidad: txt('etnicidad'), talla_copa: txt('talla_copa'),
+    color_cabello: txt('color_cabello'), color_ojos: txt('color_ojos'),
+    talla_calzado: txt('talla_calzado'), idiomas: txt('idiomas'),
+    ubicacion: txt('ubicacion'), se_adapta_a: txt('se_adapta_a'),
+    movil: txt('movil'),
+  };
+}
+function leerRedes(fd) {
+  const out = {};
+  const mapa = { red_x: 'X', red_instagram: 'Instagram', red_fansly: 'Fansly', red_otra: 'Otra' };
+  for (const [campo, etiqueta] of Object.entries(mapa)) {
+    const v = String(fd.get(campo) || '').trim();
+    if (v) out[etiqueta] = v;
+  }
+  return out;
+}
+// Recoge todos los datos opcionales de un formulario de perfil.
+function datosFormPerfil(form) {
+  const fd = new FormData(form);
+  return {
+    ...leerPerfil(fd),
+    disponibilidad: leerDisponibilidad(form.querySelector('[data-disp]')),
+    servicios: leerServicios(form.querySelector('[data-servicios]')),
+    redes: leerRedes(fd),
+  };
+}
+function initFormPerfil(form) {
+  form.querySelector('[data-campos-perfil]').innerHTML = camposPerfilHTML();
+  form.querySelector('[data-campos-contacto]').innerHTML = camposContactoHTML();
+  const dispEl = form.querySelector('[data-disp]');
+  const servEl = form.querySelector('[data-servicios]');
+  pintarDisponibilidad(dispEl, null);
+  pintarServicios(servEl, []);
+  form.querySelector('[data-add-serv]').addEventListener('click', () => agregarServicioFila(servEl));
+}
+
+// ---------------------------------------------------------------------------
 // Directorio público
 // ---------------------------------------------------------------------------
 let heroPuesto = false;
@@ -107,6 +236,57 @@ async function showPerfil(id) {
   try {
     const { chica } = await api('getChica', { id });
     const fotos = chica.fotos || [];
+    const datos = [
+      ['Con sede en', chica.ubicacion],
+      ['Se adapta a', chica.se_adapta_a],
+      ['Edad', chica.edad ? `Años ${chica.edad}` : ''],
+      ['Género', chica.genero],
+      ['Tipo de cuerpo', chica.tipo_cuerpo],
+      ['Altura', chica.altura],
+      ['Etnicidad', chica.etnicidad],
+      ['Talla de copa', chica.talla_copa],
+      ['Color de cabello', chica.color_cabello],
+      ['Color de ojos', chica.color_ojos],
+      ['Talla de calzado', chica.talla_calzado],
+      ['Idiomas', chica.idiomas],
+    ].filter(([, v]) => v);
+    const disp = chica.disponibilidad || DISP_TODO;
+    const paneles = `
+      <div class="paneles-perfil">
+        ${datos.length ? `<div class="card">
+          <h3 class="panel-title">Datos del perfil</h3>
+          ${datos.map(([et, v]) => `<div class="dato"><span>${et}</span><b>${esc(v)}</b></div>`).join('')}
+        </div>` : ''}
+        <div class="card">
+          <h3 class="panel-title">Disponibilidad</h3>
+          ${DIAS.map(([k, nombre]) => `
+            <div class="disp-dia-view"><span>${nombre}</span>
+              <span class="pill ${disp[k] === 'todo' ? 'pill-todo' : 'pill-no'}">${disp[k] === 'todo' ? 'Todo el día' : 'No disponible'}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    const tarifas = (chica.servicios || []).length ? `
+      <h2 class="sec-title">Tarifas</h2>
+      <div class="card">${(chica.servicios || []).map((s) => `
+        <div class="tarifa">
+          <div><b>${esc(s.nombre)}</b>${s.nota ? `<p class="muted">${esc(s.nota)}</p>` : ''}</div>
+          <b class="tarifa-precio">${esc(s.precio)}</b>
+        </div>`).join('')}
+      </div>` : '';
+    const redes = chica.redes || {};
+    const itemsContacto = [];
+    if (chica.movil) {
+      const tel = String(chica.movil).replace(/\D/g, '');
+      const href = tel.length === 10 ? `tel:+1${tel}` : `tel:+${tel}`;
+      itemsContacto.push(`<a class="contacto-item" href="${href}">📱 Móvil: ${esc(chica.movil)}</a>`);
+    }
+    for (const [et, v] of Object.entries(redes)) {
+      const href = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+      itemsContacto.push(`<a class="contacto-item" href="${esc(href)}" target="_blank" rel="noopener">${esc(et)}: ${esc(v)}</a>`);
+    }
+    const contacto = itemsContacto.length ? `
+      <h2 class="sec-title">Contacto</h2>
+      <div class="card contacto">${itemsContacto.join('')}</div>` : '';
     box.innerHTML = `
       <div class="perfil-grid">
         <div>
@@ -121,7 +301,8 @@ async function showPerfil(id) {
             : '<p class="muted">Esta modelo aún no tiene número de WhatsApp.</p>'}
           <p class="muted">Publicado en Sex ads</p>
         </div>
-      </div>`;
+      </div>
+      ${paneles}${tarifas}${contacto}`;
     box.querySelectorAll('[data-foto]').forEach((t) => t.addEventListener('click', () => {
       $('#fotoGrande').src = t.dataset.foto;
       box.querySelectorAll('.thumb').forEach((x) => x.classList.remove('sel'));
@@ -149,10 +330,13 @@ $('#formRegistro').addEventListener('submit', async (e) => {
     const r = await api('registrarChica', {
       nombre: fd.get('nombre'), descripcion: fd.get('descripcion'),
       telefono: fd.get('telefono'), fotos: regFotos,
+      ...datosFormPerfil(e.target),
     });
     msg.textContent = '¡Listo! Tu solicitud quedó pendiente. El admin la aprueba y tu perfil sale publicado.';
     msg.className = 'msg ok';
     e.target.reset(); regFotos = []; $('#regPreview').innerHTML = '';
+    pintarDisponibilidad(e.target.querySelector('[data-disp]'), null);
+    pintarServicios(e.target.querySelector('[data-servicios]'), []);
   } catch (err) { msg.textContent = err.message; msg.className = 'msg error'; }
 });
 
@@ -266,10 +450,13 @@ $('#formAgregar').addEventListener('submit', async (e) => {
     const r = await api('createChicaAdmin', {
       token: token(), nombre: fd.get('nombre'), descripcion: fd.get('descripcion'),
       telefono: fd.get('telefono'), fotos: addFotos,
+      ...datosFormPerfil(e.target),
     });
     msg.textContent = 'Modelo agregada y ya visible en el directorio.';
     msg.className = 'msg ok';
     e.target.reset(); addFotos = []; $('#addPreview').innerHTML = '';
+    pintarDisponibilidad(e.target.querySelector('[data-disp]'), null);
+    pintarServicios(e.target.querySelector('[data-servicios]'), []);
   } catch (err) { msg.textContent = err.message; msg.className = 'msg error'; }
 });
 
@@ -277,12 +464,23 @@ $('#formAgregar').addEventListener('submit', async (e) => {
 let editandoId = null;
 async function abrirEditar(id) {
   editandoId = id;
-  const { perfiles } = await api('listPerfiles', { token: token() });
-  const c = perfiles.find((p) => p.id === id);
+  const { chica: c } = await api('getChicaAdmin', { token: token(), id });
   if (!c) return;
   const f = $('#formEditar');
   f.id.value = c.id; f.nombre.value = c.nombre;
   f.descripcion.value = c.descripcion || ''; f.telefono.value = c.telefono || '';
+  f.edad.value = c.edad ?? '';
+  f.genero.value = c.genero || ''; f.tipo_cuerpo.value = c.tipo_cuerpo || '';
+  f.altura.value = c.altura || ''; f.etnicidad.value = c.etnicidad || '';
+  f.talla_copa.value = c.talla_copa || ''; f.color_cabello.value = c.color_cabello || '';
+  f.color_ojos.value = c.color_ojos || ''; f.talla_calzado.value = c.talla_calzado || '';
+  f.idiomas.value = c.idiomas || ''; f.ubicacion.value = c.ubicacion || '';
+  f.se_adapta_a.value = c.se_adapta_a || ''; f.movil.value = c.movil || '';
+  const redes = c.redes || {};
+  f.red_x.value = redes['X'] || ''; f.red_instagram.value = redes['Instagram'] || '';
+  f.red_fansly.value = redes['Fansly'] || ''; f.red_otra.value = redes['Otra'] || '';
+  pintarDisponibilidad(f.querySelector('[data-disp]'), c.disponibilidad);
+  pintarServicios(f.querySelector('[data-servicios]'), c.servicios);
   $('#editMsg').textContent = '';
   await pintarEditFotos(id);
   $('#modalEditar').hidden = false;
@@ -329,6 +527,7 @@ $('#formEditar').addEventListener('submit', async (e) => {
     await api('updateChica', {
       token: token(), id: Number(fd.get('id')), nombre: fd.get('nombre'),
       descripcion: fd.get('descripcion'), telefono: fd.get('telefono'),
+      ...datosFormPerfil(e.target),
     });
     msg.textContent = 'Guardado.'; msg.className = 'msg ok';
     loadPerfiles(); loadSolicitudes();
@@ -343,4 +542,7 @@ function esc(s) {
 }
 
 // Inicio
+initFormPerfil($('#formRegistro'));
+initFormPerfil($('#formAgregar'));
+initFormPerfil($('#formEditar'));
 showView('directorio');

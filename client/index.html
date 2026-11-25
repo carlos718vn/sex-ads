@@ -65,6 +65,19 @@
       <label>Número de WhatsApp
         <input name="telefono" required inputmode="tel" placeholder="Ej: 809 555 1234">
       </label>
+      <div data-campos-perfil></div>
+      <fieldset class="subform">
+        <legend>Disponibilidad (opcional)</legend>
+        <p class="muted">Marca en qué días estás disponible. Si no tocas nada, todos los días quedan en "Todo el día".</p>
+        <div data-disp></div>
+      </fieldset>
+      <fieldset class="subform">
+        <legend>Servicios con tarifas (opcional)</legend>
+        <p class="muted">Agrega los servicios que ofreces con su precio y una nota si quieres (por ejemplo: "Se requiere depósito").</p>
+        <div data-servicios></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-add-serv>＋ Agregar servicio</button>
+      </fieldset>
+      <div data-campos-contacto></div>
       <label>Fotos (al menos 1, puedes subir varias)
         <input type="file" id="regFotos" accept="image/*" multiple>
       </label>
@@ -123,6 +136,19 @@
         <label>Número de WhatsApp (opcional)
           <input name="telefono" inputmode="tel" placeholder="Ej: 809 555 1234">
         </label>
+        <div data-campos-perfil></div>
+        <fieldset class="subform">
+          <legend>Disponibilidad (opcional)</legend>
+          <p class="muted">Marca en qué días está disponible. Si no tocas nada, todos los días quedan en "Todo el día".</p>
+          <div data-disp></div>
+        </fieldset>
+        <fieldset class="subform">
+          <legend>Servicios con tarifas (opcional)</legend>
+          <p class="muted">Agrega los servicios con su precio y una nota si quieres (por ejemplo: "Se requiere depósito").</p>
+          <div data-servicios></div>
+          <button type="button" class="btn btn-ghost btn-sm" data-add-serv>＋ Agregar servicio</button>
+        </fieldset>
+        <div data-campos-contacto></div>
         <label>Fotos (puedes subir varias, sin límite)
           <input type="file" id="addFotos" accept="image/*" multiple>
         </label>
@@ -155,6 +181,17 @@
       <label>Número de WhatsApp
         <input name="telefono" inputmode="tel" placeholder="Vacío = sin botón de WhatsApp">
       </label>
+      <div data-campos-perfil></div>
+      <fieldset class="subform">
+        <legend>Disponibilidad (opcional)</legend>
+        <div data-disp></div>
+      </fieldset>
+      <fieldset class="subform">
+        <legend>Servicios con tarifas (opcional)</legend>
+        <div data-servicios></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-add-serv>＋ Agregar servicio</button>
+      </fieldset>
+      <div data-campos-contacto></div>
       <div class="row">
         <button class="btn btn-red" type="submit">Guardar</button>
         <button class="btn btn-ghost" type="button" id="btnCerrarModal">Cancelar</button>
