@@ -1,0 +1,1 @@
+{"dependencies":{"@libsql/client":"^0.18.0"},"description":"Servidor público independiente de Sex ads (directorio de modelos). Base de datos libSQL/Turso (remota) o SQLite local.","engines":{"node":">=20"},"main":"server.js","name":"sex-ads-server","scripts":{"start":"node server.js","test":"node test.mjs"},"type":"module","version":"1.0.0"}
