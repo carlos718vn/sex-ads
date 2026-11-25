@@ -1,0 +1,23 @@
+# Blueprint de Render para Sex ads.
+# Despliega el servidor como Web Service gratis (plan Free).
+# La base de datos NO está aquí: es Turso (libSQL), configurada con las
+# variables TURSO_DATABASE_URL y TURSO_AUTH_TOKEN (se ponen en el panel de
+# Render al crear el servicio, marcadas como secretas). No se crea la base
+# de datos Postgres gratis de Render porque expira a los 30 días y se borra
+# con todos los datos.
+services:
+  - type: web
+    name: sex-ads
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
