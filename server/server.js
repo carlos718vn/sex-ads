@@ -96,7 +96,23 @@ CREATE TABLE IF NOT EXISTS chicas (
   telefono TEXT NOT NULL DEFAULT '',
   estado TEXT NOT NULL DEFAULT 'pendiente',
   origen TEXT NOT NULL DEFAULT 'registro',
-  creado_en TEXT NOT NULL
+  creado_en TEXT NOT NULL,
+  edad INTEGER,
+  genero TEXT NOT NULL DEFAULT '',
+  tipo_cuerpo TEXT NOT NULL DEFAULT '',
+  altura TEXT NOT NULL DEFAULT '',
+  etnicidad TEXT NOT NULL DEFAULT '',
+  talla_copa TEXT NOT NULL DEFAULT '',
+  color_cabello TEXT NOT NULL DEFAULT '',
+  color_ojos TEXT NOT NULL DEFAULT '',
+  talla_calzado TEXT NOT NULL DEFAULT '',
+  idiomas TEXT NOT NULL DEFAULT '',
+  ubicacion TEXT NOT NULL DEFAULT '',
+  se_adapta_a TEXT NOT NULL DEFAULT '',
+  disponibilidad TEXT NOT NULL DEFAULT '{"lunes":"todo","martes":"todo","miercoles":"todo","jueves":"todo","viernes":"todo","sabado":"todo","domingo":"todo"}',
+  servicios TEXT NOT NULL DEFAULT '[]',
+  movil TEXT NOT NULL DEFAULT '',
+  redes TEXT NOT NULL DEFAULT '{}'
 );
 CREATE TABLE IF NOT EXISTS fotos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,12 +182,121 @@ async function fotoCount(chicaId) {
   const row = await db.prepare('SELECT COUNT(*) AS n FROM fotos WHERE chica_id = ?').get(chicaId);
   return Number(row?.n || 0);
 }
+// ---------------------------------------------------------------------------
+// Datos del perfil estilo Tryst (todos opcionales) + disponibilidad +
+// servicios con tarifas + contacto/redes.
+// ---------------------------------------------------------------------------
+const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+const DISP_TODO = Object.fromEntries(DIAS.map((d) => [d, 'todo']));
+function parseJSON(str, fb) {
+  try { const v = JSON.parse(str || ''); return v ?? fb; } catch { return fb; }
+}
+function normDisponibilidad(input, base) {
+  const out = { ...(base || DISP_TODO) };
+  const src = input && typeof input === 'object' ? input : {};
+  for (const d of DIAS) {
+    if (src[d] === 'todo' || src[d] === 'no') out[d] = src[d];
+  }
+  return out;
+}
+function normServicios(input) {
+  const lista = Array.isArray(input) ? input : [];
+  return lista.slice(0, 10).map((s) => ({
+    nombre: String(s?.nombre || '').trim().slice(0, 80),
+    precio: String(s?.precio || '').trim().slice(0, 40),
+    nota: String(s?.nota || '').trim().slice(0, 200),
+  })).filter((s) => s.nombre);
+}
+function normRedes(input) {
+  const src = input && typeof input === 'object' ? input : {};
+  const out = {};
+  for (const [k, v] of Object.entries(src)) {
+    const key = String(k).trim().slice(0, 30);
+    const val = String(v || '').trim().slice(0, 200);
+    if (key && val) out[key] = val;
+  }
+  return out;
+}
+// Columnas del perfil (en orden) para INSERT/UPDATE.
+const PERFIL_COLS = ['edad', 'genero', 'tipo_cuerpo', 'altura', 'etnicidad', 'talla_copa',
+  'color_cabello', 'color_ojos', 'talla_calzado', 'idiomas', 'ubicacion', 'se_adapta_a',
+  'disponibilidad', 'servicios', 'movil', 'redes'];
+const PERFIL_TEXTO = {
+  genero: 40, tipo_cuerpo: 40, altura: 20, etnicidad: 40, talla_copa: 10,
+  color_cabello: 30, color_ojos: 30, talla_calzado: 10, idiomas: 120,
+  ubicacion: 120, se_adapta_a: 120,
+};
+function perfilVals(p) {
+  return PERFIL_COLS.map((k) => {
+    if (k === 'disponibilidad' || k === 'servicios' || k === 'redes') return JSON.stringify(p[k]);
+    return p[k];
+  });
+}
+// Normaliza los campos del perfil. `base` es la fila existente (al editar)
+// o null (al crear). Los campos no enviados conservan el valor de `base`.
+function normPerfil(args, base) {
+  const get = (k) => (args[k] !== undefined && args[k] !== null ? args[k] : (base ? base[k] : undefined));
+  const out = {};
+  const edadRaw = get('edad');
+  let edad = null;
+  if (edadRaw !== undefined && edadRaw !== null && String(edadRaw).trim() !== '') {
+    const n = Number(edadRaw);
+    if (!Number.isInteger(n) || n < 18 || n > 99) throw err('La edad debe ser un número entre 18 y 99.');
+    edad = n;
+  }
+  out.edad = edad;
+  for (const [k, max] of Object.entries(PERFIL_TEXTO)) {
+    const v = get(k);
+    out[k] = v === undefined || v === null ? '' : String(v).trim().slice(0, max);
+  }
+  const movilRaw = get('movil');
+  out.movil = movilRaw === undefined || movilRaw === null ? '' : String(movilRaw).trim().slice(0, 20);
+  out.disponibilidad = normDisponibilidad(
+    args.disponibilidad, base ? parseJSON(base.disponibilidad, DISP_TODO) : DISP_TODO);
+  out.servicios = args.servicios !== undefined ? normServicios(args.servicios)
+    : (base ? parseJSON(base.servicios, []) : []);
+  out.redes = args.redes !== undefined ? normRedes(args.redes)
+    : (base ? parseJSON(base.redes, {}) : {});
+  return out;
+}
+// Migración sin borrar datos: agrega las columnas nuevas a `chicas` si faltan.
+// En bases nuevas la tabla ya las trae del SCHEMA; en la base viva de Turso
+// (donde la tabla existe desde antes) las agrega con su valor por defecto.
+async function migrate() {
+  const cols = await db.prepare('PRAGMA table_info(chicas)').all();
+  const have = new Set(cols.map((c) => c.name));
+  const dispDef = JSON.stringify(DISP_TODO).replace(/'/g, "''");
+  const adds = [
+    ['edad', 'INTEGER'],
+    ['genero', 'TEXT'], ['tipo_cuerpo', 'TEXT'], ['altura', 'TEXT'],
+    ['etnicidad', 'TEXT'], ['talla_copa', 'TEXT'], ['color_cabello', 'TEXT'],
+    ['color_ojos', 'TEXT'], ['talla_calzado', 'TEXT'], ['idiomas', 'TEXT'],
+    ['ubicacion', 'TEXT'], ['se_adapta_a', 'TEXT'],
+    ['disponibilidad', `TEXT NOT NULL DEFAULT '${dispDef}'`],
+    ['servicios', `TEXT NOT NULL DEFAULT '[]'`],
+    ['movil', 'TEXT'],
+    ['redes', `TEXT NOT NULL DEFAULT '{}'`],
+  ];
+  for (const [name, def] of adds) {
+    if (!have.has(name)) await db.exec(`ALTER TABLE chicas ADD COLUMN ${name} ${def}`);
+  }
+}
+
 function publicChica(c, cover, count) {
   return {
     id: c.id, nombre: c.nombre, descripcion: c.descripcion,
     telefono: c.telefono, whatsapp: waLink(c.telefono),
     estado: c.estado, origen: c.origen, creado_en: c.creado_en,
     foto: cover, foto_count: count,
+    edad: c.edad ?? null,
+    genero: c.genero || '', tipo_cuerpo: c.tipo_cuerpo || '', altura: c.altura || '',
+    etnicidad: c.etnicidad || '', talla_copa: c.talla_copa || '',
+    color_cabello: c.color_cabello || '', color_ojos: c.color_ojos || '',
+    talla_calzado: c.talla_calzado || '', idiomas: c.idiomas || '',
+    ubicacion: c.ubicacion || '', se_adapta_a: c.se_adapta_a || '',
+    disponibilidad: parseJSON(c.disponibilidad, DISP_TODO),
+    servicios: parseJSON(c.servicios, []),
+    movil: c.movil || '', redes: parseJSON(c.redes, {}),
   };
 }
 
@@ -282,10 +407,11 @@ const actions = {
     const descripcion = String(args.descripcion || '').trim().slice(0, 1000);
     const telefono = validarTelefono(args.telefono, true);
     const fotos = validarFotos(args.fotos, true);
+    const p = normPerfil(args, null);
     const ahora = sdNow().stamp;
     const r = await db.prepare(
-      "INSERT INTO chicas (nombre, descripcion, telefono, estado, origen, creado_en) VALUES (?, ?, ?, 'pendiente', 'registro', ?)"
-    ).run(nombre, descripcion, telefono, ahora);
+      `INSERT INTO chicas (nombre, descripcion, telefono, estado, origen, creado_en, ${PERFIL_COLS.join(', ')}) VALUES (?, ?, ?, 'pendiente', 'registro', ?, ${PERFIL_COLS.map(() => '?').join(', ')})`
+    ).run(nombre, descripcion, telefono, ahora, ...perfilVals(p));
     const id = Number(r.lastInsertRowid);
     await insertFotos(id, fotos, ahora);
     return { id, estado: 'pendiente', mensaje: 'Tu solicitud quedó pendiente. El admin la revisa y la aprueba.' };
@@ -341,10 +467,11 @@ const actions = {
     const descripcion = String(args.descripcion || '').trim().slice(0, 1000);
     const telefono = validarTelefono(args.telefono, false);
     const fotos = validarFotos(args.fotos, false);
+    const p = normPerfil(args, null);
     const ahora = sdNow().stamp;
     const r = await db.prepare(
-      "INSERT INTO chicas (nombre, descripcion, telefono, estado, origen, creado_en) VALUES (?, ?, ?, 'aprobada', 'admin', ?)"
-    ).run(nombre, descripcion, telefono, ahora);
+      `INSERT INTO chicas (nombre, descripcion, telefono, estado, origen, creado_en, ${PERFIL_COLS.join(', ')}) VALUES (?, ?, ?, 'aprobada', 'admin', ?, ${PERFIL_COLS.map(() => '?').join(', ')})`
+    ).run(nombre, descripcion, telefono, ahora, ...perfilVals(p));
     const id = Number(r.lastInsertRowid);
     if (fotos.length) await insertFotos(id, fotos, ahora);
     return { id, estado: 'aprobada' };
@@ -359,8 +486,10 @@ const actions = {
     if (!nombre) throw err('Escribe el nombre de la modelo.');
     const descripcion = String(args.descripcion ?? c.descripcion).trim().slice(0, 1000);
     const telefono = validarTelefono(args.telefono ?? c.telefono, false);
-    await db.prepare('UPDATE chicas SET nombre = ?, descripcion = ?, telefono = ? WHERE id = ?')
-      .run(nombre, descripcion, telefono, id);
+    const p = normPerfil(args, c);
+    await db.prepare(
+      `UPDATE chicas SET nombre = ?, descripcion = ?, telefono = ?, ${PERFIL_COLS.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`
+    ).run(nombre, descripcion, telefono, ...perfilVals(p), id);
     return { ok: true };
   },
 
@@ -477,6 +606,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 await db.exec(SCHEMA);
+await migrate();
 await seed();
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Sex ads escuchando en 0.0.0.0:${PORT} (DB: ${TURSO_URL ? 'Turso remoto' : DB_PATH})`);
